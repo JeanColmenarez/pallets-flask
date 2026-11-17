@@ -71,31 +71,31 @@ def test_logout(client, auth):
         assert "user_id" not in session
 
 
-
-
+# R2: la contraseña debe tener al menos 8 caracteres. Si tiene menos, la app
+# debe mostrar un mensaje de error y no crear el usuario en la base de datos.
 @pytest.mark.parametrize(
     ("username", "password"),
     (
-        ("user_7", "abcdefg"),  # 7 caracteres: al limite de la validación
+        ("user_7", "abcdefg"),  # 7 caracteres: justo por debajo del límite
     ),
 )
 def test_register_password_too_short(client, app, username, password):
-    # Enviamos el formulario de registro con una contraseña demasiado corta
+    # Simulo que un usuario rellena el formulario de registro con una contraseña corta
     response = client.post(
         "/auth/register", data={"username": username, "password": password}
     )
 
-    # La app debe mostrar el mensaje de error del R2
+    # Compruebo que en la página aparece el mensaje de error del R2
     assert b"Password must be at least 8 characters long." in response.data
 
-    # Y NO debe haber creado el usuario en la base de datos
+    # Abro la base de datos y busco al usuario: no debería existir
     with app.app_context():
         user = (
             get_db()
             .execute("SELECT * FROM user WHERE username = ?", (username,))
-            .fetchone()
+            .fetchone() # devuelve la fila o None si no hay ninguna
         )
-        assert user is None
+        assert user is None # None = el usuario no se ha creado
 
 
 @pytest.mark.parametrize(
